@@ -1,0 +1,12 @@
+# Bazel-native LoRA fine-tuning: typed SFT datasets, declarative recipes, runpod/local training backends, ExpertManifest emit
+module(
+    name = "rules_lora",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+# Dev-only.
+bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
