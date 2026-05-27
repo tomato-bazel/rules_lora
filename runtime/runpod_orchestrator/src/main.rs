@@ -238,7 +238,11 @@ fn write_runpod_manifest(a: WriteRunpodManifestArgs) -> Result<()> {
     let family_components = match a.family.as_str() {
         "qwen2" => FamilyComponents {
             tokenizer: "torchtune.models.qwen2.qwen2_tokenizer",
-            model_lora: "torchtune.models.qwen2.lora_qwen2",
+            // Use the size-specific builder so we don't have to thread
+            // every architectural arg (vocab_size / num_heads / …)
+            // through the manifest. 1.5B is hardcoded for the agora
+            // parser; v0.0.13 generalizes to a `--family-variant` arg.
+            model_lora: "torchtune.models.qwen2.lora_qwen2_1_5b",
             checkpoint_model_type: "QWEN2",
         },
         "llama3" => FamilyComponents {

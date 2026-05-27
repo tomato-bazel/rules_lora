@@ -5,6 +5,15 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.13 — Use size-specific torchtune model builder
+
+`torchtune.models.qwen2.lora_qwen2` requires every architectural arg
+(vocab_size / num_heads / embed_dim / …) explicitly. Switch the
+qwen2 family to `torchtune.models.qwen2.lora_qwen2_1_5b`, the
+torchtune-shipped builder that bakes the Qwen2/2.5-1.5B
+architecture in. Hardcoded to 1.5B for v0; v0.0.14 generalizes via
+a `--family-variant` flag.
+
 ## 0.0.12 — Round out the torchtune YAML config
 
 torchtune 0.3.1's `lora_finetune_single_device` recipe rejected
