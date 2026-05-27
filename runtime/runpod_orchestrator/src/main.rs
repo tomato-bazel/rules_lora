@@ -297,6 +297,7 @@ echo "[lora-{name}] setup: installing torchtune + huggingface-cli"
 # torchtune and the HF hub client.
 pip install --quiet --no-input \
     torchtune \
+    torchao \
     "huggingface_hub[cli]" \
     transformers \
     datasets

@@ -5,6 +5,12 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.10 — Add `torchao` to pod-side setup
+
+torchtune now imports `torchao` unconditionally on package import.
+Without it `tune run` exits with `ModuleNotFoundError: No module
+named 'torchao'`. Adds `torchao` to the setup's pip install.
+
 ## 0.0.9 — Fix format string in v0.0.8 (yanked)
 
 v0.0.8 shipped a Rust `format!` template with an unescaped `{`
