@@ -8,7 +8,7 @@
 
 module(
     name = "rules_lora",
-    version = "0.0.16",
+    version = "0.0.17",
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
@@ -39,7 +39,7 @@ bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "protobuf", version = "33.4")
 
 # Dev-only.
-bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
 
 # ─── Rust toolchain ────────────────────────────────────────────────

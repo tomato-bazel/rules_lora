@@ -23,11 +23,13 @@ providers from `//lora/private:providers.bzl`.
 
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_runpod//runpod:defs.bzl", "runpod_job", "runpod_manifest")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load(
     "//lora/private:rules.bzl",
     _lora_base_model = "lora_base_model",
     _lora_corpus = "lora_corpus",
     _lora_dataset = "lora_dataset",
+    _lora_local_runner_rule = "lora_local_runner",
     _lora_recipe = "lora_recipe",
     _lora_runpod_manifest_synth = "lora_runpod_manifest_synth",
     _lora_train_rule = "lora_train",
@@ -90,6 +92,28 @@ def lora_train(
         backend = backend,
         visibility = visibility,
     )
+
+    if backend == "local":
+        _lora_local_runner_rule(
+            name = name + "_local_runner_script",
+            adapter_name = name,
+            recipe = recipe,
+            dataset = dataset,
+            base = base,
+            visibility = ["//visibility:private"],
+        )
+        sh_binary(
+            name = name + ".run",
+            srcs = [":" + name + "_local_runner_script"],
+            data = [
+                recipe,
+                dataset,
+                "@rules_lora//runtime/local_runner:local_runner.sh",
+            ],
+            deps = ["@bazel_tools//tools/bash/runfiles"],
+            visibility = visibility,
+        )
+        return
 
     if backend != "runpod":
         return

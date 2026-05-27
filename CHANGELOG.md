@@ -5,6 +5,28 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.17 — `lora_train(backend = "local")` real entrypoint
+
+The previously-stubbed `local` backend now emits a runnable
+`<name>.run` sh_binary that drives torchtune on the host:
+
+  * `runtime/local_runner/local_runner.sh` — venv bootstrap (workspace-
+    local `.venvs/lora-local/`), `pip install torchao==0.5.0 torchtune
+    ==0.3.1 + HF tooling`, HF base-model fetch, inline torchtune
+    config render with auto-detected `device` (`mps` on macOS,
+    `cuda` if `nvidia-smi`, else `cpu`), `tune run
+    lora_finetune_single_device --config <yaml>`.
+  * `_lora_local_runner` private rule reads LoraRecipeInfo +
+    LoraBaseModelInfo + LoraDatasetInfo and generates an entry
+    script that passes the hyperparams positionally to the runner.
+  * `lora_train(backend = "local")` wires the rule into a `<name>.run`
+    sh_binary.
+
+Adapter lands at `outputs/adapter-<name>/` in the user's workspace
+— no rsync, no pod, no orphan A100s. For 9-row LoRA fine-tunes
+the on-laptop MPS path is the right default; reserve the runpod
+backend for serious data volume.
+
 ## 0.0.16 — Manifest `outputs` path matches torchtune save dir
 
 v0.0.15 declared the manifest's `outputs = ["adapter-<name>"]`
