@@ -5,6 +5,15 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.7 — Default RunPod image tag fix
+
+v0.0.4 pinned `runpod/pytorch:2.5.1-py3.11-cuda12.4.1-devel-ubuntu22.04`
+as the default RunPod image — but that tag was never published to
+Docker Hub, so RunPod's container daemon failed pod startup with
+`manifest unknown`. Bump default to `2.4.0-py3.11-cuda12.4.1-devel-
+ubuntu22.04` — same Python/CUDA/Ubuntu stack, but a real tag (used
+by prime-transformer's working manifests).
+
 ## 0.0.6 — `lora_train(runpod_cloud = "SECURE")` knob
 
 Adds a `runpod_cloud` attr to the `lora_train` macro (default

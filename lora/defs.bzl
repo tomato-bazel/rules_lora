@@ -42,7 +42,7 @@ lora_recipe = _lora_recipe
 # Default RunPod image + GPU. Used by `lora_train` when
 # `backend = "runpod"` and no explicit override is passed.
 _DEFAULT_RUNPOD_GPU = "NVIDIA H100 80GB HBM3"
-_DEFAULT_RUNPOD_IMAGE = "runpod/pytorch:2.5.1-py3.11-cuda12.4.1-devel-ubuntu22.04"
+_DEFAULT_RUNPOD_IMAGE = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
 
 def lora_train(
         name,
