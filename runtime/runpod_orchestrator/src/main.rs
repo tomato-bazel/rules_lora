@@ -346,7 +346,7 @@ MODEL_DIR="$(cat /tmp/lora-{name}.model_dir)"
 DATASET="{dataset_src}"
 if [[ ! -f "${{DATASET}}" ]]; then
     echo "[lora-{name}] train: ERROR — dataset not present at ${{DATASET}}" >&2
-    echo "[lora-{name}] train:   (was the workdir rsync'd? what is at \$(pwd)?)" >&2
+    echo "[lora-{name}] train:   (was the workdir rsync'd? what is at $(pwd)?)" >&2
     pwd >&2; ls -la >&2
     exit 2
 fi

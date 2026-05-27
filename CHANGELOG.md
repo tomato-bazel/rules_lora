@@ -5,6 +5,15 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.26 — Fix TOML escape in diagnostic line (\$(pwd))
+
+The 0.0.25 diagnostic line for the missing-dataset case used
+`\$(pwd)` to defer shell-expansion, but TOML's triple-quoted
+basic string rejects `\$` as an invalid escape sequence — the
+manifest fails to parse and runpod-cli aborts before reaching
+the pod. Drop the backslash: `$(pwd)` is fine, TOML passes it
+through verbatim and bash expands it on the pod at run time.
+
 ## 0.0.25 — Re-publish of 0.0.24 (GitHub tarball cache churn)
 
 The 0.0.24 tag landed correctly in git but GitHub's archive
