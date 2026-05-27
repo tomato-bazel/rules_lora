@@ -91,10 +91,23 @@ source "$VENV/bin/activate"
 # the pod backend pins to 2.4 (the image's torch); on macOS / Linux
 # locally pip picks the latest matching set.
 echo "[lora-${NAME}] local: ensuring torch + torchao + torchtune"
+# Known-good pin set for the Apple-Silicon-MPS path. The pip
+# dependency graph for the torchtune + torchao + kagglehub triangle
+# breaks in interesting ways on every unpinned release; this set is
+# the one observed working in May 2026:
+#   - torchtune 0.5.0 — has lora_qwen2_1_5b and skips the
+#     `int4_weight_only` import path during MPS training.
+#   - torchao 0.7.0 — last version that exports `int4_weight_only`
+#     (the name torchtune 0.5 references); 0.17 dropped it.
+#   - kagglehub < 0.3 — older kagglehub doesn't import
+#     `get_web_endpoint` from kagglesdk (the 0.1.x kagglesdk that
+#     ships on PyPI doesn't expose it).
+#   - torch — let pip pick the latest matching install.
 pip install --quiet \
     torch \
-    torchao \
-    torchtune \
+    "torchao==0.7.0" \
+    "torchtune==0.5.0" \
+    "kagglehub<0.3" \
     "huggingface_hub[cli]" \
     transformers \
     datasets >&2

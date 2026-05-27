@@ -5,6 +5,29 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.22 — Pin local-backend deps to a known-good triangle
+
+The torchtune / torchao / kagglehub / kagglesdk dep graph breaks
+under several unpinned permutations on Apple-Silicon-MPS:
+
+  * Latest torchao (0.13+) requires `torch>=2.11`.
+  * Latest torchtune imports `from kagglesdk.kaggle_env import
+    get_web_endpoint`, which the 0.1.x kagglesdk on PyPI doesn't
+    export.
+  * Latest kagglehub depends on a kagglesdk that breaks the import.
+  * torchtune 0.3.x doesn't yet have the import path issue but
+    pre-dates `lora_qwen2_1_5b` we use.
+
+Pin the local install to the May-2026 known-good set:
+  * `torchao==0.7.0`
+  * `torchtune==0.5.0`
+  * `kagglehub<0.3`
+  * `torch` — let pip pick the latest matching version.
+
+The RunPod backend continues to pin `torchao==0.5.0` +
+`torchtune==0.3.1` in its own setup (matched to torch 2.4 in the
+runpod/pytorch image).
+
 ## 0.0.21 — Local backend prefers python 3.11
 
 torchtune's transitive deps (kagglehub → kagglesdk) hit import-time
