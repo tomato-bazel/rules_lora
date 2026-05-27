@@ -5,6 +5,13 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.19 — `exec bash $RUNNER` (no +x needed)
+
+`exports_files` doesn't stamp the executable bit on shell scripts;
+v0.0.17/18's generated wrapper did `exec "$RUNNER"` which failed
+with `Permission denied`. Switch to `exec bash "$RUNNER"` —
+bash reads the shebang directly without needing the exec bit.
+
 ## 0.0.18 — Fix `_runfiles_path` for external-repo short_paths
 
 Cleanup-release of 0.0.17. `_runfiles_path(file, ctx)` returned

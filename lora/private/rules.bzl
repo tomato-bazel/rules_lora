@@ -286,7 +286,10 @@ set -e
 # --- end runfiles.bash initialization v3 ---
 
 RUNNER="$(rlocation "{runner_rl}")"
-exec "$RUNNER" \\
+# `exec bash $RUNNER` (not `exec $RUNNER`) because Bazel doesn't
+# stamp the +x bit on `exports_files`-d shell scripts; bash reads
+# the shebang and runs without needing the exec permission.
+exec bash "$RUNNER" \\
     "{recipe_rl}" \\
     "{dataset_rl}" \\
     "{adapter_name}" \\
