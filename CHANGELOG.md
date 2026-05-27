@@ -5,7 +5,13 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
-## 0.0.24 — Runpod: explicit dataset path + correct outputs prefix
+## 0.0.25 — Re-publish of 0.0.24 (GitHub tarball cache churn)
+
+The 0.0.24 tag landed correctly in git but GitHub's archive
+endpoint returned 404 due to force-push tag-rewrite cache state.
+0.0.25 is the same fixes, fresh tag.
+
+## 0.0.24 — Runpod: explicit dataset path + correct outputs prefix (skip)
 
 Two coupled fixes to the runpod backend that were causing the
 manifest synth to silently train zero iterations and drop the
