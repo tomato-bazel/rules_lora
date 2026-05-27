@@ -73,10 +73,16 @@ cd "${BUILD_WORKSPACE_DIRECTORY:-$(pwd)}"
 echo "[lora-${NAME}] local: cwd=$PWD adapter=${NAME} family=${FAMILY}"
 
 # ─── Python venv ──────────────────────────────────────────────────
+# torchtune's transitive deps churn aggressively; Python 3.14 hits
+# `from kagglesdk.kaggle_env import get_web_endpoint` import-time
+# breakage. Prefer 3.11 (the ML-stack lingua franca) when available;
+# fall back to `python3` otherwise.
+PYTHON_BIN="$(command -v python3.11 || command -v python3.12 || command -v python3)"
+echo "[lora-${NAME}] local: using $PYTHON_BIN ($($PYTHON_BIN --version))"
 VENV=".venvs/lora-local"
 if [[ ! -d "$VENV" ]]; then
     echo "[lora-${NAME}] local: creating venv at $VENV"
-    python3 -m venv "$VENV"
+    "$PYTHON_BIN" -m venv "$VENV"
 fi
 source "$VENV/bin/activate"
 

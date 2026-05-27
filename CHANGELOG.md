@@ -5,6 +5,15 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.21 — Local backend prefers python 3.11
+
+torchtune's transitive deps (kagglehub → kagglesdk) hit import-time
+breakage under Python 3.14 (`cannot import name 'get_web_endpoint'`).
+Pick `python3.11` if available (the ML stack's lingua franca),
+falling back to `python3.12` then `python3`. On macOS with
+`brew install python@3.11` this picks the brew interpreter
+automatically.
+
 ## 0.0.20 — Local backend: install torch + unpin versions
 
 Two local-backend fixes uncovered by the agora smoke run:
