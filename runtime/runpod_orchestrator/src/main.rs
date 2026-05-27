@@ -380,11 +380,19 @@ shuffle: True
 batch_size: {micro_batch_size}
 gradient_accumulation_steps: {grad_accum_steps}
 epochs: {epochs}
+max_steps_per_epoch: null
+resume_from_checkpoint: False
+save_adapter_weights_only: True
 
 optimizer:
   _component_: torch.optim.AdamW
   weight_decay: 0.01
   lr: {learning_rate}
+  fused: True
+
+lr_scheduler:
+  _component_: torchtune.modules.get_cosine_schedule_with_warmup
+  num_warmup_steps: 1
 
 loss:
   _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
@@ -393,10 +401,14 @@ device: cuda
 dtype: bf16
 
 compile: False
+enable_activation_checkpointing: False
 metric_logger:
   _component_: torchtune.training.metric_logging.StdoutLogger
 log_every_n_steps: 1
 log_peak_memory_stats: True
+profiler:
+  _component_: torchtune.training.setup_torch_profiler
+  enabled: False
 YAML
 
 echo "[lora-{name}] train: invoking tune run"

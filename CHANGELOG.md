@@ -5,6 +5,19 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.12 — Round out the torchtune YAML config
+
+torchtune 0.3.1's `lora_finetune_single_device` recipe rejected
+the v0.0.11 config with `Missing key max_steps_per_epoch`. Add
+all of the keys torchtune unconditionally reads at recipe init:
+  * `max_steps_per_epoch: null`
+  * `resume_from_checkpoint: False`
+  * `save_adapter_weights_only: True`
+  * `enable_activation_checkpointing: False`
+  * `lr_scheduler` block (cosine warmup, 1 step warmup)
+  * `optimizer.fused: True`
+  * `profiler` block (disabled)
+
 ## 0.0.11 — Pin torchao + torchtune versions
 
 Latest torchao (0.13+) imports torch's `int1` dtype, which doesn't
