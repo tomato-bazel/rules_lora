@@ -5,6 +5,15 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.18 — Fix `_runfiles_path` for external-repo short_paths
+
+Cleanup-release of 0.0.17. `_runfiles_path(file, ctx)` returned
+`<workspace>/<short_path>` unconditionally; for external-repo files
+whose `short_path` already starts with `../<canonical>/...`, this
+produced runfiles paths like `rules_lora+/../rules_lora+/runtime/...`
+that `rlocation` couldn't resolve. Strip the leading `../` for
+external-short-path inputs.
+
 ## 0.0.17 — `lora_train(backend = "local")` real entrypoint
 
 The previously-stubbed `local` backend now emits a runnable
