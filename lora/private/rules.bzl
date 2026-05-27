@@ -109,7 +109,12 @@ lora_recipe = rule(
         "rank": attr.int(default = 16),
         "alpha": attr.int(default = 32),
         "target_modules": attr.string_list(
-            default = ["q_proj", "k_proj", "v_proj", "o_proj"],
+            # Drop `o_proj`: torchtune's tune_to_peft_adapter_config
+            # (called at checkpoint save) doesn't recognize `o_proj`
+            # as a target module for Qwen2/Llama3, so any post-train
+            # peft conversion errors. q/k/v give the same effective
+            # rank for the attention block in practice.
+            default = ["q_proj", "k_proj", "v_proj"],
         ),
         "learning_rate": attr.string(default = "2e-4"),
         "micro_batch_size": attr.int(default = 4),

@@ -127,6 +127,12 @@ def lora_train(
         manifest = ":" + name + "_runpod_manifest",
         pod_type = pod_type,
         image = image,
+        # Single-shot training: tear down the pod on success or
+        # failure. Without this, every `bazel run` that errors mid-
+        # tune leaves an orphan A100 burning $1.20/hr until manually
+        # deleted. The adapter is pulled to outputs/ before the
+        # failure-terminate fires, so partial checkpoints come back.
+        ephemeral = True,
         visibility = visibility,
     )
 

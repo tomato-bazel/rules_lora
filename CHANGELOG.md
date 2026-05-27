@@ -5,6 +5,24 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.15 — Drop `o_proj` default + ephemeral pod
+
+Two paper-iteration QoL fixes:
+
+* `lora_recipe.target_modules` default loses `o_proj`. torchtune's
+  `tune_to_peft_adapter_config` doesn't accept `o_proj` as a target
+  module for Qwen2 / Llama3, so post-train peft conversion errored
+  (with the adapter weights themselves saved fine). New default
+  `["q_proj", "k_proj", "v_proj"]` round-trips through the peft
+  config save.
+
+* `lora_train(backend = "runpod")` now passes `ephemeral = True` to
+  the emitted `runpod_job`. The `.run` wrapper threads
+  `--down-on-success --down-on-failure` through runpod-cli, so an
+  errored `tune run` no longer leaves an orphan A100 burning
+  $1.20/hr until manually deleted. Bumps min rules_runpod dep to
+  0.0.5 (where `--down-on-failure` lands).
+
 ## 0.0.14 — Drop unsupported model arg
 
 `lora_qwen2_1_5b` doesn't accept `apply_lora_to_output`. Remove

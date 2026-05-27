@@ -8,7 +8,7 @@
 
 module(
     name = "rules_lora",
-    version = "0.0.14",
+    version = "0.0.15",
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
@@ -26,7 +26,7 @@ bazel_dep(name = "rules_rust", version = "0.70.0")
 # `lora_train(backend = "runpod", ...)` macro emits a synthesized
 # manifest + `runpod_job` so the user can `bazel run :<train>.run`
 # end-to-end. Sibling premium repo.
-bazel_dep(name = "rules_runpod", version = "0.0.2")
+bazel_dep(name = "rules_runpod", version = "0.0.5")
 local_path_override(
     module_name = "rules_runpod",
     path = "../rules_runpod",
