@@ -127,11 +127,16 @@ def lora_train(
     # torchtune config from the rule's recipe attrs and invokes
     # `tune run lora_finetune_single_device`. Replaces the v0.0.2
     # `echo placeholder` and its `write_file` synth.
+    # 0.0.24: the manifest synth reads the dataset's source_path
+    # from LoraDatasetInfo to bake an explicit DATASET=<path> into
+    # the run script (replaces the v0.0.23 find-based discovery
+    # that silently failed when the workspace had multiple .jsonls).
     _lora_runpod_manifest_synth(
         name = name + "_runpod_manifest_toml",
         adapter_name = name,
         recipe = recipe,
         base = base,
+        dataset = dataset,
         gpu_type = pod_type,
         image = image,
         cloud_type = runpod_cloud,

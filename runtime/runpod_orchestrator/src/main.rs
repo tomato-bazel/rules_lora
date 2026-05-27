@@ -50,6 +50,15 @@ enum Cmd {
         /// Job name (e.g., `parser_jobspec`).
         #[arg(long)]
         name: String,
+        /// Workspace-relative path to the dataset JSONL inside the
+        /// rsync'd workdir. Set by the Starlark rule from
+        /// `ctx.file.src.short_path` of the underlying `lora_dataset`.
+        /// 0.0.24: replaces the legacy `find`-based dataset
+        /// discovery in the run script, which would silently pick the
+        /// wrong file (or no file) when multiple `.jsonl`s were in
+        /// the workspace.
+        #[arg(long)]
+        dataset_src: String,
         /// RunPod GPU type (e.g., `NVIDIA H100 80GB HBM3`).
         #[arg(long)]
         gpu_type: String,
@@ -119,6 +128,7 @@ fn main() -> Result<()> {
         } => write_jobspec(name, recipe, dataset, base_id, base_revision, backend, out),
         Cmd::WriteRunpodManifest {
             name,
+            dataset_src,
             gpu_type,
             image,
             base_id,
@@ -135,6 +145,7 @@ fn main() -> Result<()> {
             out,
         } => write_runpod_manifest(WriteRunpodManifestArgs {
             name,
+            dataset_src,
             gpu_type,
             image,
             base_id,
@@ -212,6 +223,7 @@ fn write_jobspec(
 
 struct WriteRunpodManifestArgs {
     name: String,
+    dataset_src: String,
     gpu_type: String,
     image: String,
     base_id: String,
@@ -291,7 +303,11 @@ fn render_manifest_toml(
     format!(
         r#"name = "lora-{name}"
 workdir = "."
-outputs = ["adapter-{name}"]
+# Output path matches what the synthesized run script writes
+# to ($(pwd)/outputs/adapter-{name}/). v0.0.23 had this as
+# `["adapter-{name}"]` — the rsync pull then looked at the wrong
+# path on the pod and silently dropped the adapter.
+outputs = ["outputs/adapter-{name}"]
 
 setup = """
 set -euo pipefail
@@ -321,21 +337,25 @@ set -euo pipefail
 echo "[lora-{name}] train: starting"
 
 MODEL_DIR="$(cat /tmp/lora-{name}.model_dir)"
-# Walk every .jsonl in the workdir, pick the first whose first line
-# is a `messages_v1` row (i.e. starts with the `messages` JSON key).
-# Robust to whatever naming convention the consumer uses (sft.jsonl,
-# dataset.jsonl, parser_seed_dataset.jsonl, ...).
-DATASET=""
-while IFS= read -r f; do
-    head -c 12 "$f" 2>/dev/null | grep -q '"messages"' || continue
-    DATASET="$f"
-    break
-done < <(find . -type f -name '*.jsonl' -not -path '*/bazel-*' 2>/dev/null)
-if [[ -z "${{DATASET}}" ]]; then
-    echo "[lora-{name}] train: ERROR — no messages_v1 JSONL found in workdir" >&2
+# Dataset path is baked at build time by the Starlark rule from
+# the underlying `lora_dataset`'s source path. v0.0.23 used a
+# `find` heuristic that would silently pick the wrong .jsonl (or
+# none) when the workspace had multiple — torchtune then ran for
+# 0 batches and saved an empty adapter. The explicit path is the
+# only correct semantics.
+DATASET="{dataset_src}"
+if [[ ! -f "${{DATASET}}" ]]; then
+    echo "[lora-{name}] train: ERROR — dataset not present at ${{DATASET}}" >&2
+    echo "[lora-{name}] train:   (was the workdir rsync'd? what is at \$(pwd)?)" >&2
+    pwd >&2; ls -la >&2
     exit 2
 fi
-echo "[lora-{name}] train: dataset = ${{DATASET}}"
+DATASET_ROWS="$(wc -l < "${{DATASET}}")"
+echo "[lora-{name}] train: dataset = ${{DATASET}} (${{DATASET_ROWS}} rows)"
+if (( DATASET_ROWS == 0 )); then
+    echo "[lora-{name}] train: ERROR — dataset is empty" >&2
+    exit 2
+fi
 OUTPUT_DIR="$(pwd)/outputs/adapter-{name}"
 mkdir -p "${{OUTPUT_DIR}}"
 
@@ -426,6 +446,7 @@ image = "{image}"
 cloud_type = "{cloud_type}"
 "#,
         name = a.name,
+        dataset_src = a.dataset_src,
         gpu_type = a.gpu_type,
         image = a.image,
         base_id = a.base_id,

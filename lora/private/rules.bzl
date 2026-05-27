@@ -35,6 +35,7 @@ def _lora_dataset_impl(ctx):
         DefaultInfo(files = depset([out, sha_out])),
         LoraDatasetInfo(
             jsonl = out,
+            source_path = ctx.file.src.short_path,
             schema = ctx.attr.schema,
             # n_examples and sha are emitted into sha_out as a JSON
             # sidecar; build-time consumers read it via a separate
@@ -360,10 +361,16 @@ def _lora_runpod_manifest_synth_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".toml")
     recipe = ctx.attr.recipe[LoraRecipeInfo]
     base = ctx.attr.base[LoraBaseModelInfo]
+    # Workspace-relative path to the underlying source JSONL of the
+    # `lora_dataset`. Used by the synth template to bake an explicit
+    # `DATASET=<path>` into the run script (replaces the v0.0.23
+    # `find`-based discovery that silently failed).
+    dataset_src_path = ctx.attr.dataset[LoraDatasetInfo].source_path
 
     args = ctx.actions.args()
     args.add("write-runpod-manifest")
     args.add("--name", ctx.attr.adapter_name)
+    args.add("--dataset-src", dataset_src_path)
     args.add("--gpu-type", ctx.attr.gpu_type)
     args.add("--image", ctx.attr.image)
     args.add("--base-id", base.id)
@@ -397,6 +404,11 @@ lora_runpod_manifest_synth = rule(
         ),
         "recipe": attr.label(mandatory = True, providers = [LoraRecipeInfo]),
         "base": attr.label(mandatory = True, providers = [LoraBaseModelInfo]),
+        # Reads `source_path` from LoraDatasetInfo to bake the
+        # dataset path into the run script. The validated bazel-bin
+        # artifact (`jsonl`) is skipped by rsync (`bazel-*` exclude),
+        # so the source-tree path is what survives the upload.
+        "dataset": attr.label(mandatory = True, providers = [LoraDatasetInfo]),
         "gpu_type": attr.string(mandatory = True),
         "image": attr.string(mandatory = True),
         "family": attr.string(
@@ -491,6 +503,13 @@ def _lora_corpus_impl(ctx):
         DefaultInfo(files = depset([val_out, sha_out])),
         LoraDatasetInfo(
             jsonl = val_out,
+            # lora_corpus is a derived target — no single source
+            # JSONL to upload. The runpod backend errors clearly if
+            # someone wires a lora_corpus directly into lora_train
+            # with backend="runpod". For now, route the corpus
+            # through an explicit `lora_dataset(src=<corpus_output>)`
+            # if you need runpod ingest.
+            source_path = "",
             schema = ctx.attr.schema,
             n_examples = -1,
             sha = "",

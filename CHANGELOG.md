@@ -5,6 +5,39 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.24 — Runpod: explicit dataset path + correct outputs prefix
+
+Two coupled fixes to the runpod backend that were causing the
+manifest synth to silently train zero iterations and drop the
+adapter on the pod:
+
+  1. Dataset discovery: the v0.0.23 run-script template walked
+     `find . -name '*.jsonl'` and picked the first file whose
+     first 12 bytes contained `"messages"`. On any workspace with
+     multiple .jsonl files it would silently pick the wrong one,
+     OR (when the actual SFT JSONL was filtered out of the rsync
+     upload) leave DATASET empty and torchtune ran for zero
+     batches. v0.0.24 bakes the explicit source path into the
+     run script at build time, derived from the underlying
+     `lora_dataset`'s `source_path` (new on `LoraDatasetInfo`).
+     Errors loudly with `pwd && ls -la` context if the upload
+     missed the file.
+
+  2. Outputs prefix: the synthesized TOML had
+     `outputs = ["adapter-<name>"]` while the run script writes
+     to `outputs/adapter-<name>/`. The post-train rsync pulled
+     the wrong path and silently dropped the adapter. Fixed to
+     `outputs = ["outputs/adapter-<name>"]`.
+
+  3. New Starlark wiring: `LoraDatasetInfo.source_path` carries
+     the workspace-relative path of the lora_dataset's `src`;
+     `_lora_runpod_manifest_synth` reads it from the new
+     `dataset` attr (which providers-checks `LoraDatasetInfo`).
+     `lora_corpus` constructs `source_path = ""` since it's a
+     derived target with no single source JSONL — using a
+     `lora_corpus` directly in a `runpod`-backend `lora_train`
+     will fail with a clear error.
+
 ## 0.0.23 — Pin torchtune to 0.4.0 (torch.cpu.memory_stats fix)
 
 torchtune 0.5.0's `get_memory_stats` calls

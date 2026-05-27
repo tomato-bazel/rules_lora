@@ -8,6 +8,13 @@ LoraDatasetInfo = provider(
     doc = "Validated SFT dataset.",
     fields = {
         "jsonl": "File — the validated JSONL artifact.",
+        "source_path": (
+            "str — workspace-relative short_path of the underlying " +
+            "source JSONL (`ctx.file.src.short_path`). Used by " +
+            "runpod backend to bake an explicit DATASET= into the " +
+            "run script. Source-tree path is needed because the " +
+            "validated bazel-bin jsonl is excluded from rsync upload."
+        ),
         "schema": "str — one of {`messages_v1`, `instruction_v1`}.",
         "n_examples": "int — recorded at validate time.",
         "sha": "str — BLAKE3 hex of the JSONL bytes; pins the dataset.",
