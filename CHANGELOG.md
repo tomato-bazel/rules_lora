@@ -5,6 +5,14 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.5 — runpod manifest TOML structure fix
+
+v0.0.4 emitted a TOML where `setup` and `run` followed `[resources]`,
+so the TOML parser folded them inside that table and runpod-cli
+rejected the manifest with `missing field setup`. Fix: top-level
+keys (name, workdir, outputs, setup, run) now come *before* the
+`[resources]` table.
+
 ## 0.0.4 — `lora_train` pod-side manifest invokes real torchtune
 
 The v0.0.2 `write_file` placeholder (`run = """echo placeholder"""`)

@@ -272,18 +272,14 @@ fn render_manifest_toml(
     target_modules_yaml: &str,
     fc: &FamilyComponents,
 ) -> String {
-    // Heredocs are escaped on rust side as ${} so they're literal in
-    // the bash. The `setup` block installs torchtune + hf cli and
-    // pre-downloads weights. `run` renders the effective config and
-    // invokes `tune run`.
+    // Top-level keys (name, setup, run) come *before* the `[resources]`
+    // table — otherwise TOML parses them as members of that table and
+    // runpod-cli's Manifest struct rejects the manifest with
+    // `missing field setup`.
     format!(
         r#"name = "lora-{name}"
 workdir = "."
 outputs = ["adapter-{name}"]
-
-[resources]
-gpu_type = "{gpu_type}"
-image = "{image}"
 
 setup = """
 set -euo pipefail
@@ -385,6 +381,10 @@ echo "[lora-{name}] train: invoking tune run"
 tune run lora_finetune_single_device --config /tmp/lora-{name}.yaml
 echo "[lora-{name}] train: complete; outputs at ${{OUTPUT_DIR}}"
 """
+
+[resources]
+gpu_type = "{gpu_type}"
+image = "{image}"
 "#,
         name = a.name,
         gpu_type = a.gpu_type,
