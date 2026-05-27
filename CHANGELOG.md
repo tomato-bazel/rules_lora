@@ -5,6 +5,20 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.27 — Align runpod torchtune pin with local + dump config
+
+0.0.26's runpod-side install pinned torchtune==0.3.1; local backend
+uses 0.4.0. Same `chat_dataset` config that successfully trained
+the 8-row seed on local-MPS produced zero iterations against the
+85k-row corpus on the pod — the version skew turned out to be the
+likely culprit. Bumped to 0.4.0 to match.
+
+Also: the run script now `cat`s the rendered torchtune YAML to
+stderr and prints the first 200 bytes of the dataset's first row
+before invoking `tune run`. Helps diagnose dataset/config issues
+when the Claude Code background-task buffer truncates the early
+upload + setup output.
+
 ## 0.0.26 — Fix TOML escape in diagnostic line (\$(pwd))
 
 The 0.0.25 diagnostic line for the missing-dataset case used

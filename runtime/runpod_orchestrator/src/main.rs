@@ -320,7 +320,7 @@ echo "[lora-{name}] setup: installing torchtune + huggingface-cli"
 # unpinned pulls a release expecting torch >= 2.11 (e.g. torch.int1).
 pip install --quiet --no-input \
     "torchao==0.5.0" \
-    "torchtune==0.3.1" \
+    "torchtune==0.4.0" \
     "huggingface_hub[cli]" \
     transformers \
     datasets
@@ -435,6 +435,11 @@ profiler:
   enabled: False
 YAML
 
+echo "[lora-{name}] train: rendered config:"
+cat /tmp/lora-{name}.yaml | sed 's/^/  | /' >&2
+echo "[lora-{name}] train: dataset first line:"
+head -1 "${{DATASET}}" | head -c 200 >&2
+echo >&2
 echo "[lora-{name}] train: invoking tune run"
 tune run lora_finetune_single_device --config /tmp/lora-{name}.yaml
 echo "[lora-{name}] train: complete; outputs at ${{OUTPUT_DIR}}"
