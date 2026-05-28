@@ -5,6 +5,19 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.30 — GPU fallback list (rules_runpod 0.0.7)
+
+`lora_train`'s `runpod_gpu` now accepts either a single GPU type
+(string, unchanged) or an ordered fallback **list**, e.g.
+`runpod_gpu = ["NVIDIA L40S", "NVIDIA A40", "NVIDIA A100 80GB PCIe"]`.
+The list is rendered into the synthesized manifest as
+`gpu_type = [...]`, and rules_runpod 0.0.7's `train` tries each in turn,
+advancing past capacity errors. Decouples the (frequently-changing,
+availability-driven) GPU target from the model recipe — no more
+hand-editing the BUILD and relaunching when SECURE capacity is dry. The
+manifest synth emits the candidates via repeated `--gpu-type`; the
+`_lora_runpod_manifest_synth` `gpu_type` attr is now a `string_list`.
+
 ## 0.0.29 — Detached training (rules_runpod 0.0.6)
 
 Synthesized runpod manifest now sets `detached = true` +

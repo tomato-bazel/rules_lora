@@ -59,9 +59,12 @@ enum Cmd {
         /// the workspace.
         #[arg(long)]
         dataset_src: String,
-        /// RunPod GPU type (e.g., `NVIDIA H100 80GB HBM3`).
+        /// RunPod GPU type(s), e.g. `NVIDIA H100 80GB HBM3`. Repeatable
+        /// (`--gpu-type A --gpu-type B`): an ordered fallback list the
+        /// runpod-cli tries in turn, advancing to the next on a
+        /// capacity ("no instances available") error.
         #[arg(long)]
-        gpu_type: String,
+        gpu_type: Vec<String>,
         /// RunPod container image.
         #[arg(long)]
         image: String,
@@ -231,7 +234,7 @@ fn write_jobspec(
 struct WriteRunpodManifestArgs {
     name: String,
     dataset_src: String,
-    gpu_type: String,
+    gpu_type: Vec<String>,
     image: String,
     base_id: String,
     base_revision: String,
@@ -254,6 +257,9 @@ struct WriteRunpodManifestArgs {
 }
 
 fn write_runpod_manifest(a: WriteRunpodManifestArgs) -> Result<()> {
+    if a.gpu_type.is_empty() {
+        anyhow::bail!("at least one --gpu-type is required");
+    }
     let target_modules_yaml = a
         .target_modules
         .split(',')
@@ -317,6 +323,16 @@ fn render_manifest_toml(
     //   * `wandb login --relogin "$WANDB_API_KEY"` authenticates.
     //   * The rendered torchtune metric_logger swaps StdoutLogger
     //     for WandBLogger with the configured project + run name.
+    // Render the GPU candidates as a TOML array; runpod-cli's manifest
+    // schema accepts either a string or a list and tries them in order.
+    let gpu_array = format!(
+        "[{}]",
+        a.gpu_type
+            .iter()
+            .map(|g| format!("\"{}\"", g.trim()))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
     let wandb_enabled = !a.wandb_project.is_empty();
     let forward_envs = if wandb_enabled {
         "\nforward_envs = [\"WANDB_API_KEY\"]"
@@ -508,7 +524,7 @@ echo "[lora-{name}] train: complete; outputs at ${{OUTPUT_DIR}}"
 """
 
 [resources]
-gpu_type = "{gpu_type}"
+gpu_type = {gpu_type}
 image = "{image}"
 cloud_type = "{cloud_type}"
 "#,
@@ -518,7 +534,7 @@ cloud_type = "{cloud_type}"
         wandb_pip = wandb_pip,
         wandb_login = wandb_login,
         metric_logger_yaml = metric_logger_yaml,
-        gpu_type = a.gpu_type,
+        gpu_type = gpu_array,
         image = a.image,
         base_id = a.base_id,
         base_revision = a.base_revision,

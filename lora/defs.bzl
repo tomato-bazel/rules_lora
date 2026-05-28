@@ -86,7 +86,10 @@ def lora_train(
       recipe: label to a `lora_recipe` target.
       dataset: label to a `lora_dataset` target.
       backend: one of "local" | "runpod" | "modal".
-      runpod_gpu: override the default RunPod GPU type.
+      runpod_gpu: override the default RunPod GPU type. Either a single
+        type (string) or an ordered fallback list — the runpod-cli tries
+        each in turn, advancing past capacity ("no instances available")
+        errors. e.g. `["NVIDIA L40S", "NVIDIA A40", "NVIDIA A100 80GB PCIe"]`.
       runpod_image: override the default RunPod image.
       visibility: standard bazel visibility.
     """
@@ -124,7 +127,16 @@ def lora_train(
     if backend != "runpod":
         return
 
-    pod_type = runpod_gpu or _DEFAULT_RUNPOD_GPU
+    # `runpod_gpu` accepts a single GPU type (string) or an ordered
+    # fallback list. The list reaches the manifest as `gpu_type = [...]`;
+    # runpod-cli tries each in turn, advancing past capacity errors.
+    if runpod_gpu == None:
+        gpus = [_DEFAULT_RUNPOD_GPU]
+    elif type(runpod_gpu) == "string":
+        gpus = [runpod_gpu]
+    else:
+        gpus = runpod_gpu
+    pod_type = gpus[0]  # primary — jobspec metadata; manifest carries the full list
     image = runpod_image or _DEFAULT_RUNPOD_IMAGE
 
     # v0.0.4: the manifest TOML is synthesized by the Rust binary in
@@ -143,7 +155,7 @@ def lora_train(
         recipe = recipe,
         base = base,
         dataset = dataset,
-        gpu_type = pod_type,
+        gpu_type = gpus,
         image = image,
         cloud_type = runpod_cloud,
         wandb_project = wandb_project,

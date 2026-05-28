@@ -371,7 +371,7 @@ def _lora_runpod_manifest_synth_impl(ctx):
     args.add("write-runpod-manifest")
     args.add("--name", ctx.attr.adapter_name)
     args.add("--dataset-src", dataset_src_path)
-    args.add("--gpu-type", ctx.attr.gpu_type)
+    args.add_all("--gpu-type", ctx.attr.gpu_type)
     args.add("--image", ctx.attr.image)
     args.add("--base-id", base.id)
     args.add("--base-revision", base.revision)
@@ -410,7 +410,11 @@ lora_runpod_manifest_synth = rule(
         # artifact (`jsonl`) is skipped by rsync (`bazel-*` exclude),
         # so the source-tree path is what survives the upload.
         "dataset": attr.label(mandatory = True, providers = [LoraDatasetInfo]),
-        "gpu_type": attr.string(mandatory = True),
+        "gpu_type": attr.string_list(
+            mandatory = True,
+            doc = "Ordered RunPod GPU-type fallback list. The runpod-cli " +
+                  "tries each in turn, advancing on a capacity error.",
+        ),
         "image": attr.string(mandatory = True),
         "family": attr.string(
             default = "qwen2",
