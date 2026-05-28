@@ -5,6 +5,15 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.31 — Fix gpu_type list arg passing
+
+0.0.30 rendered the GPU fallback list correctly in the manifest but the
+synth rule passed the candidates to the orchestrator as
+`--gpu-type A B C` (flag once + bare values), which the orchestrator's
+clap `Vec<String>` rejects. Use `add_all(..., before_each = "--gpu-type")`
+so the flag repeats per value (`--gpu-type A --gpu-type B`). 0.0.30 is
+broken for multi-GPU `runpod_gpu`; use 0.0.31.
+
 ## 0.0.30 — GPU fallback list (rules_runpod 0.0.7)
 
 `lora_train`'s `runpod_gpu` now accepts either a single GPU type

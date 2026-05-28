@@ -371,7 +371,10 @@ def _lora_runpod_manifest_synth_impl(ctx):
     args.add("write-runpod-manifest")
     args.add("--name", ctx.attr.adapter_name)
     args.add("--dataset-src", dataset_src_path)
-    args.add_all("--gpu-type", ctx.attr.gpu_type)
+    # `before_each` repeats the flag per value (`--gpu-type A --gpu-type B`),
+    # matching the orchestrator's clap `Vec<String>`. Plain
+    # `add_all("--gpu-type", …)` would emit the flag once + bare values.
+    args.add_all(ctx.attr.gpu_type, before_each = "--gpu-type")
     args.add("--image", ctx.attr.image)
     args.add("--base-id", base.id)
     args.add("--base-revision", base.revision)
