@@ -5,6 +5,19 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.32 — Network-volume data path for runpod training
+
+- **`lora_train` gains `data_volume` / `data_center`.** When set, the
+  synthesized manifest mounts the RunPod network volume, stages the
+  validated dataset to it via S3, reads the dataset from the mount
+  (`/workspace/...`), tars the adapter into a single key, and drops the
+  heavy `training/full` corpus from the (now-skipped) workdir rsync.
+  Pairs with rules_runpod 0.0.8's volume `stage`/`output_archive`.
+- **Fixes the genrule-dataset gap:** datasets built by a genrule live only
+  in `bazel-bin`, which the workdir rsync's `bazel-*` exclude dropped — so
+  they never reached the pod. S3 staging delivers them. Source-tree
+  datasets are unaffected (legacy workdir path when `data_volume=""`).
+
 ## 0.0.31 — Fix gpu_type list arg passing
 
 0.0.30 rendered the GPU fallback list correctly in the manifest but the

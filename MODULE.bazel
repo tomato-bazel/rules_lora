@@ -8,7 +8,7 @@
 
 module(
     name = "rules_lora",
-    version = "0.0.31",
+    version = "0.0.32",
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
