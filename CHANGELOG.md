@@ -5,6 +5,16 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.35 — Forward HF_TOKEN to the pod
+
+- **The synthesized manifest now always sets `forward_envs = ["HF_TOKEN"]`**
+  (plus `"WANDB_API_KEY"` when wandb is enabled). The pod's `hf download`
+  of the base model needs the token for **private or gated** repos — e.g.
+  a merged two-stage base (`lora_merge` → private HF repo) or Llama. Before
+  this, a private base failed setup with "repo is private, make sure you
+  are authenticated." runpod-cli skips any `forward_envs` var absent from
+  the local env, so this is harmless when no token is set.
+
 ## 0.0.34 — `lora_merge`: fold an adapter into its base + export
 
 - **New `lora_merge` macro/rule.** Folds a trained LoRA adapter into its

@@ -366,11 +366,18 @@ fn render_manifest_toml(
             .join(", ")
     );
     let wandb_enabled = !a.wandb_project.is_empty();
-    let forward_envs = if wandb_enabled {
-        "\nforward_envs = [\"WANDB_API_KEY\"]"
+    // Always forward HF_TOKEN: the pod's `hf download` of the base model
+    // needs it for private or gated repos (e.g. a merged two-stage base,
+    // or Llama). runpod-cli skips any forward_envs var that isn't set
+    // locally, so this is harmless when no token is present. WANDB_API_KEY
+    // is added only when wandb tracking is enabled.
+    let forward_list = if wandb_enabled {
+        "\"HF_TOKEN\", \"WANDB_API_KEY\""
     } else {
-        ""
+        "\"HF_TOKEN\""
     };
+    let forward_envs = format!("\nforward_envs = [{forward_list}]");
+    let forward_envs = forward_envs.as_str();
     let wandb_pip = if wandb_enabled { " wandb" } else { "" };
     let wandb_login = if wandb_enabled {
         r#"
