@@ -8,7 +8,7 @@
 
 module(
     name = "rules_lora",
-    version = "0.0.33",
+    version = "0.0.34",
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
@@ -76,5 +76,18 @@ crate.spec(
 crate.spec(package = "blake3", version = "1.5")
 crate.spec(package = "tracing", version = "0.1")
 crate.spec(features = ["env-filter"], package = "tracing-subscriber", version = "0.3")
+
+# `lora_merge` (runtime/lora_merge): fold a trained LoRA adapter into its
+# base and export a standalone HF model dir. candle-core gives safetensors
+# load/save + a pickle reader for torchtune's `adapter_model.bin` + tensor
+# matmul/dtype; hf-hub downloads the base. CPU only — the merge is I/O bound,
+# so no `metal`/`cuda` feature (keeps the build portable across host OSes).
+crate.spec(package = "candle-core", version = "0.9")
+crate.spec(
+    default_features = False,
+    features = ["ureq", "rustls-tls"],
+    package = "hf-hub",
+    version = "0.4",
+)
 crate.from_specs(name = "crates")
 use_repo(crate, "crates")

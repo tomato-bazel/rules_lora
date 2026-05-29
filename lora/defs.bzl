@@ -6,6 +6,7 @@ load("@rules_lora//lora:defs.bzl",
      "lora_dataset",
      "lora_recipe",
      "lora_train",
+     "lora_merge",
      "expert_manifest")
 ```
 
@@ -15,6 +16,10 @@ load("@rules_lora//lora:defs.bzl",
   jobspec; additionally composes with `@rules_runpod` when
   `backend = "runpod"` to emit a synthesized manifest +
   `runpod_job`, giving the user `bazel run :<name>.runpod_job.run`.
+* `lora_merge` — v0.0.34: fold a trained adapter into its base and
+  export a standalone HF model dir (`bazel run :<name>.run`), with an
+  optional HF push. Carries `LoraBaseModelInfo` so the merged model is
+  usable directly as a `lora_train(base = ...)` (two-stage rebase).
 * `expert_manifest` — bundle N adapters as the routing input.
 
 Macros forward to rules in `//lora/private:rules.bzl`, which fill
@@ -30,6 +35,7 @@ load(
     _lora_corpus = "lora_corpus",
     _lora_dataset = "lora_dataset",
     _lora_local_runner_rule = "lora_local_runner",
+    _lora_merge_rule = "lora_merge",
     _lora_recipe = "lora_recipe",
     _lora_runpod_manifest_synth = "lora_runpod_manifest_synth",
     _lora_train_rule = "lora_train",
@@ -194,6 +200,55 @@ def lora_train(
         # deleted. The adapter is pulled to outputs/ before the
         # failure-terminate fires, so partial checkpoints come back.
         ephemeral = True,
+        visibility = visibility,
+    )
+
+def lora_merge(
+        name,
+        adapter_dir,
+        base,
+        out_dir,
+        push_repo = "",
+        private = True,
+        visibility = None):
+    """Fold a trained LoRA adapter into its base and export an HF dir.
+
+    Emits:
+      * `<name>` — the rule; carries `LoraBaseModelInfo(id = push_repo)`
+        so it can be used directly as a `lora_train(base = ...)`.
+      * `<name>.run` — `bazel run`-able; merges `outputs/adapter-…` into
+        the base (candle, CPU), writes `out_dir`, and — when `push_repo`
+        is set — pushes the merged dir to the HF hub via the `hf` CLI.
+
+    The adapter is a runtime artifact (training pulls it to
+    `outputs/adapter-<train-name>`), so `adapter_dir`/`out_dir` are
+    workspace-relative path strings resolved at run time. To use the
+    result as a training base, set `push_repo` and `bazel run :<name>.run`
+    before the dependent `lora_train` run.
+
+    Args:
+      name: target name.
+      adapter_dir: workspace-relative trained-adapter dir.
+      base: label to the `lora_base_model` the adapter trained on.
+      out_dir: workspace-relative output dir for the merged model.
+      push_repo: optional HF repo id to push the merged model to.
+      private: create the HF repo as private when pushing (default True).
+      visibility: standard bazel visibility.
+    """
+    _lora_merge_rule(
+        name = name,
+        adapter_dir = adapter_dir,
+        base = base,
+        out_dir = out_dir,
+        push_repo = push_repo,
+        private = private,
+        visibility = visibility,
+    )
+    sh_binary(
+        name = name + ".run",
+        srcs = [":" + name],
+        data = ["@rules_lora//runtime/lora_merge:lora-merge"],
+        deps = ["@bazel_tools//tools/bash/runfiles"],
         visibility = visibility,
     )
 

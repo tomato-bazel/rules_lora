@@ -5,6 +5,25 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries (when we publish; for
 now this repo is premium / private).
 
+## 0.0.34 — `lora_merge`: fold an adapter into its base + export
+
+- **New `lora_merge` macro/rule.** Folds a trained LoRA adapter into its
+  base model (`W' = W + (alpha/r)·B@A`) and exports a standalone HF model
+  dir — `bazel run :<name>.run` — with an optional `hf` CLI push. Carries
+  `LoraBaseModelInfo(id = push_repo)` so the merged model is usable
+  directly as a `lora_train(base = ...)` (the two-stage rebase pattern:
+  train a fluency adapter, merge it in, then train the task adapter on the
+  fluent base).
+- **`runtime/lora_merge` (Rust, candle, CPU).** The merge math, ported
+  from a proven inference-time merge; validated byte-exact against peft's
+  `merge_and_unload`. Reads `num_hidden_layers` from the base `config.json`
+  and `r`/`lora_alpha`/`target_modules` from the adapter config; copies the
+  base's tokenizer aux files (`vocab.json`, `merges.txt`, …) so the result
+  loads as a plain causal-LM. Adds `candle-core` + `hf-hub` (CPU-only, no
+  GPU feature — the merge is I/O bound).
+- Currently merges attention projections (`q/k/v/o_proj`); MLP modules and
+  non-Qwen2/Llama key layouts are follow-ups.
+
 ## 0.0.33 — Fix single-file violation in synth manifest
 
 - **`lora_runpod_manifest_synth` returned two files in `DefaultInfo`**

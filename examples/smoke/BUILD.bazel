@@ -2,6 +2,7 @@ load(
     "@rules_lora//lora:defs.bzl",
     "lora_base_model",
     "lora_dataset",
+    "lora_merge",
     "lora_recipe",
     "lora_train",
 )
@@ -42,4 +43,17 @@ lora_train(
     recipe = ":tiny_recipe",
     dataset = ":tiny_sft",
     backend = "runpod",
+)
+
+# Exercises the lora_merge macro (rule + .run wrapper). No execution
+# here — `bazel build //examples/smoke:smoke_merge` just checks the
+# rule analyzes and the wrapper script is generated.
+lora_merge(
+    name = "smoke_merge",
+    adapter_dir = "outputs/adapter-smoke_jobspec",
+    base = ":tiny_base",
+    out_dir = "outputs/merged-smoke",
+    # No push_repo here — merge-only, so the smoke build stays
+    # side-effect-free. Set push_repo + `bazel run :smoke_merge.run`
+    # to also push the merged dir to the hub.
 )

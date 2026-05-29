@@ -1,0 +1,23 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# Folds a trained LoRA adapter into its base model and exports a
+# standalone HF model dir (candle merge, CPU). Invoked by the
+# `lora_merge` rule's generated `.run` wrapper. The optional HF push
+# shells out to the `hf` CLI.
+rust_binary(
+    name = "lora-merge",
+    srcs = ["src/main.rs"],
+    edition = "2021",
+    deps = [
+        "@crates//:anyhow",
+        "@crates//:candle-core",
+        "@crates//:clap",
+        "@crates//:hf-hub",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tracing",
+        "@crates//:tracing-subscriber",
+    ],
+)
