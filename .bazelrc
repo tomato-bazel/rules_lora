@@ -1,12 +1,4 @@
-common --enable_bzlmod
-
 # Allows `use_extension(..., isolate=True)` so our `crates` universe
 # can coexist with consumer crates universes (rules_agentic_ide,
 # prime-transformer, etc. all also register `crates`).
 common --experimental_isolated_extension_usages
-
-common --registry=https://raw.githubusercontent.com/fastverk/bazel-registry/main/
-common --registry=https://bcr.bazel.build/
-
-test --test_output=errors
-test --test_summary=terse
