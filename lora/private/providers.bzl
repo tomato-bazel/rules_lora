@@ -65,3 +65,20 @@ ExpertManifestInfo = provider(
         "n_experts": "int.",
     },
 )
+
+LoraLineageInfo = provider(
+    doc = (
+        "Transitive training provenance. Threaded up the " +
+        "dataset -> recipe -> base -> train -> merge graph by " +
+        "`lora_lineage_aspect`, so every artifact carries the full set of " +
+        "inputs that produced it without hand-maintained sha plumbing."
+    ),
+    fields = {
+        "records": (
+            "depset[struct] — provenance records `(kind, label, detail)`, " +
+            "transitive over the base/recipe/dataset/adapter edges. " +
+            "`kind` is one of {dataset, recipe, base, adapter}; `detail` is a " +
+            "stable `k=v;...` summary of the node's pinned attributes."
+        ),
+    },
+)

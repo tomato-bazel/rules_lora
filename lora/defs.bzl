@@ -30,6 +30,11 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_runpod//runpod:defs.bzl", "runpod_job", "runpod_manifest")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load(
+    "//lora/private:aspects.bzl",
+    _lora_lineage = "lora_lineage",
+    _lora_lineage_aspect = "lora_lineage_aspect",
+)
+load(
     "//lora/private:rules.bzl",
     _lora_base_model = "lora_base_model",
     _lora_corpus = "lora_corpus",
@@ -46,6 +51,12 @@ lora_base_model = _lora_base_model
 lora_corpus = _lora_corpus
 lora_dataset = _lora_dataset
 lora_recipe = _lora_recipe
+
+# Provenance: `lora_lineage(target = ...)` emits the transitive
+# dataset/recipe/base lineage of a train/merge/adapter target as JSON;
+# `lora_lineage_aspect` is exposed for consumers wiring their own audits.
+lora_lineage = _lora_lineage
+lora_lineage_aspect = _lora_lineage_aspect
 
 # Default RunPod image + GPU. Used by `lora_train` when
 # `backend = "runpod"` and no explicit override is passed.
@@ -252,8 +263,12 @@ def lora_merge(
         visibility = visibility,
     )
 
-def expert_manifest(name, adapters, routing = "nearest_centroid",
-                    cluster_manifest = None, visibility = None):
+def expert_manifest(
+        name,
+        adapters,
+        routing = "nearest_centroid",
+        cluster_manifest = None,
+        visibility = None):
     """Bundle N trained adapters into an `ExpertManifest.binpb`.
 
     Wire shape mirrors `[[rules_agentic_ide]]`'s

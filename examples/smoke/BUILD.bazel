@@ -2,6 +2,7 @@ load(
     "@rules_lora//lora:defs.bzl",
     "lora_base_model",
     "lora_dataset",
+    "lora_lineage",
     "lora_merge",
     "lora_recipe",
     "lora_train",
@@ -15,20 +16,23 @@ load(
 lora_dataset(
     name = "tiny_sft",
     src = "sft.jsonl",
-    schema = "messages_v1",
     min_examples = 3,
+    schema = "messages_v1",
 )
 
 lora_recipe(
     name = "tiny_recipe",
-    framework = "torchtune",
-    rank = 4,
     alpha = 8,
-    target_modules = ["q_proj", "v_proj"],
+    epochs = 1,
+    framework = "torchtune",
+    grad_accum_steps = 1,
     learning_rate = "5e-4",
     micro_batch_size = 1,
-    grad_accum_steps = 1,
-    epochs = 1,
+    rank = 4,
+    target_modules = [
+        "q_proj",
+        "v_proj",
+    ],
 )
 
 lora_base_model(
@@ -39,10 +43,10 @@ lora_base_model(
 
 lora_train(
     name = "smoke_jobspec",
-    base = ":tiny_base",
-    recipe = ":tiny_recipe",
-    dataset = ":tiny_sft",
     backend = "runpod",
+    base = ":tiny_base",
+    dataset = ":tiny_sft",
+    recipe = ":tiny_recipe",
 )
 
 # Exercises the lora_merge macro (rule + .run wrapper). No execution
@@ -56,4 +60,11 @@ lora_merge(
     # No push_repo here — merge-only, so the smoke build stays
     # side-effect-free. Set push_repo + `bazel run :smoke_merge.run`
     # to also push the merged dir to the hub.
+)
+
+# Provenance: trace smoke_jobspec's transitive dataset/recipe/base lineage.
+# `bazel build //examples/smoke:smoke_lineage` -> smoke_lineage.lineage.json.
+lora_lineage(
+    name = "smoke_lineage",
+    target = ":smoke_jobspec",
 )
