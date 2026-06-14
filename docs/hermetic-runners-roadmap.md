@@ -70,35 +70,45 @@ adapter lands in `outputs/adapter-<name>`. Repeat on a CUDA Linux box for the
 
 ---
 
-## Track 2 — orchestrator `run` subcommand (RunPod pod lifecycle)
+## Track 2 — RunPod backend: already implemented by `rules_runpod` (not a rewrite)
 
-Reimplement the pod lifecycle in `runtime/runpod_orchestrator` so the `runpod`
-backend is a single binary, not an `@rules_runpod` macro composition.
+**Correction (2026-06): the original "reimplement the pod lifecycle" framing was
+wrong** — checked against the actual code with a live key. `rules_runpod`'s CLI
+already implements the *full* lifecycle — deploy → upload (S3 volume or SSH
+rsync) → ssh → `tune run` → poll → download adapter → terminate — via a dedicated
+`runpod` SDK crate (`runpod::Client`, REST API; see `cli/src/pod.rs`,
+`train.rs`), and `@rules_runpod`'s `runpod_job` macro already drives it. The
+current `lora_train` runpod backend works through that. So there is **no
+from-scratch orchestrator to build**; reimplementing it in
+`runtime/runpod_orchestrator` would just duplicate `rules_runpod`.
 
-1. **`run --jobspec <path>`** reads the typed `lora.v1.TrainingJobSpec`
-   (composer already emits it; the jobspec carries `recipe_yaml`, base id/rev,
-   backend, `backend_config_json`).
-2. **Pod lifecycle against the RunPod API** (the work `@rules_runpod` does today):
-   create pod (GPU-type fallback list, image, cloud tier, optional network
-   volume + data-center placement) → stage dataset (S3/volume or SSH rsync) →
-   `setup` (pip torchtune + HF CLI, prefetch base) → `run` (`tune run
-   lora_finetune_single_device` with the synthesized config) → poll → pull
-   `outputs/adapter-<name>` → **`ephemeral`: terminate on success *and* failure**
-   (don't leak a paid GPU). Optional W&B forwarding.
-3. **Drop `@rules_runpod`** from `lora_train`'s runpod branch; the `runpod`
-   backend toolchain's runner becomes this orchestrator binary + the jobspec in
-   runfiles. The `.run` `select()` then points at it.
+What's actually left for the runpod backend is small and optional:
 
-**Verification (needs a live RunPod account):** `bazel run` the runpod backend,
-watch a pod come up, train, return the adapter, and tear down — including the
-failure path (kill mid-train, confirm no orphan GPU).
+- **(Optional) single-binary wiring.** If you want the per-platform `runpod`
+  toolchain runner to be one binary instead of the `@rules_runpod` macro
+  composition, have `runtime/runpod_orchestrator`'s `run` subcommand *call the
+  `runpod` crate* (the one `rules_runpod` already uses) rather than reimplement
+  the REST calls — lifecycle stays in `rules_runpod`, the lora side just reads
+  the jobspec and hands off. Wiring/ergonomics, not new capability; the
+  venv-free win is marginal for runpod (the heavy work runs on the pod anyway).
+- Otherwise the `runpod_orchestrator run` stub can simply be **deleted** — it
+  advertises a capability `rules_runpod` already provides.
+
+**Validation note (from a live key):** RunPod's GraphQL pod-creation is
+deprecated — read queries work, the create *mutation* 403s on a read-scoped key;
+`rules_runpod` correctly uses the REST API via the `runpod` crate. A live
+training check therefore runs through the **existing `rules_runpod` path**
+(write-scoped key + SSH key + a synth manifest), not a hand-rolled API call. Key
++ account confirmed working (read); 44 GPU types available.
 
 ---
 
 ## Sequencing & guardrails
 
-- The two tracks are independent; do Track 1 first (more self-contained, MPS is
-  cheaper to iterate than RunPod GPUs).
+- **Track 1 is the real remaining work** (Track 2 turned out to be mostly "delete
+  the stub / optional wiring" — see the correction above). Do Track 1 on an
+  Apple-Silicon box: lock the torch set → split wheels → in-process torchtune →
+  verify a real MPS step.
 - Keep the current working paths (venv local / `@rules_runpod`) in place until
   each replacement is verified on hardware — flip the toolchain runner only when
   green.
