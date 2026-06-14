@@ -27,6 +27,7 @@ Config schema (`<name>.local.json`, written by the lora_local_config rule):
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -34,25 +35,37 @@ import tempfile
 
 from python.runfiles import runfiles
 
-# Family -> (tokenizer, lora model builder, HF checkpointer model_type). Mirrors
-# the case block the shell runner rendered.
+# family -> (tokenizer component, HF checkpointer model_type). The LoRA *model*
+# builder is NOT here: it depends on the base model's parameter size, not the
+# family (qwen2 alone ships 0.5B/1.5B/3B/7B builders). Picking the wrong size
+# fails at checkpoint load with a "size mismatch" (e.g. norm.scale 896 vs 1536
+# for 0.5B vs 1.5B). See _model_builder.
 _FAMILIES = {
-    "qwen2": (
-        "torchtune.models.qwen2.qwen2_tokenizer",
-        "torchtune.models.qwen2.lora_qwen2_1_5b",
-        "QWEN2",
-    ),
-    "llama3": (
-        "torchtune.models.llama3.llama3_tokenizer",
-        "torchtune.models.llama3.lora_llama3",
-        "LLAMA3",
-    ),
-    "mistral": (
-        "torchtune.models.mistral.mistral_tokenizer",
-        "torchtune.models.mistral.lora_mistral",
-        "MISTRAL",
-    ),
+    "qwen2": ("torchtune.models.qwen2.qwen2_tokenizer", "QWEN2"),
+    "llama3": ("torchtune.models.llama3.llama3_tokenizer", "LLAMA3"),
+    "mistral": ("torchtune.models.mistral.mistral_tokenizer", "MISTRAL"),
 }
+
+
+def _model_builder(family, base_id):
+    """The torchtune LoRA model builder matching the base model's size.
+
+    Derives the size from the HF id (e.g. Qwen2.5-0.5B-Instruct -> "0.5") and
+    maps to the size-suffixed builder (torchtune.models.qwen2.lora_qwen2_0_5b).
+    Must match the checkpoint's hidden size or `tune run` errors at load.
+    """
+    m = re.search(r"(\d+(?:\.\d+)?)\s*[bB]\b", base_id)
+    size = m.group(1).replace(".", "_") if m else None
+    if family == "qwen2":
+        if not size:
+            raise SystemExit("cannot parse model size from base_id: %s" % base_id)
+        return "torchtune.models.qwen2.lora_qwen2_%sb" % size
+    if family == "llama3":
+        return "torchtune.models.llama3.lora_llama3_%sb" % size if size \
+            else "torchtune.models.llama3.lora_llama3_8b"
+    if family == "mistral":
+        return "torchtune.models.mistral.lora_mistral"  # torchtune ships the 7B builder
+    raise SystemExit("unknown family: %s" % family)
 
 # Known-good pin set for the Apple-Silicon-MPS path. The torchtune + torchao +
 # kagglehub triangle breaks in interesting ways on every unpinned release; this
@@ -90,7 +103,8 @@ def _detect_device(venv_python, name):
 
 
 def _render_config(cfg, model_dir, output_dir, dataset, device):
-    tokenizer, model_lora, model_type = _FAMILIES[cfg["family"]]
+    tokenizer, model_type = _FAMILIES[cfg["family"]]
+    model_lora = _model_builder(cfg["family"], cfg["base_id"])
     modules = ", ".join('"%s"' % m for m in cfg["target_modules"])
     return """# Rendered by rules_lora local_train.py at run time.
 output_dir: {output_dir}
