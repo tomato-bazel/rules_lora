@@ -539,22 +539,29 @@ setup = """
 set -euo pipefail
 echo "[lora-{name}] setup: installing torchtune + huggingface-cli"
 
-# RunPod's pytorch image ships python3 + pip + CUDA; we just add
-# torchtune and the HF hub client.
-# Pin torchao + torchtune to versions compatible with torch 2.4
-# (the version baked into runpod/pytorch:2.4.0). Bumping either
-# unpinned pulls a release expecting torch >= 2.11 (e.g. torch.int1).
+# RunPod's pytorch:2.4.0 image ships python3 + pip + torch 2.4.1+cu124,
+# matched to the host's CUDA 12.4 driver — we add torchtune + the HF
+# client on top WITHOUT touching torch. ALL of these are pinned to the
+# torch-2.4 era on purpose: unpinned `transformers`/`datasets`/
+# `huggingface_hub` pull releases that need a newer torch (transformers
+# 5.x), and reinstalling torch itself pulls a wheel built for a CUDA newer
+# than the pod's driver (a torch 2.12 wheel fails with "NVIDIA driver too
+# old"). This exact set is verified end-to-end on a real RunPod CUDA pod
+# (RTX A4000). Keep it in lockstep with the image tag; bumping it (or the
+# image) is a deliberate, tested change.
 pip install --quiet --no-input \
     "torchao==0.5.0" \
     "torchtune==0.4.0" \
-    "huggingface_hub[cli]" \
-    transformers \
-    datasets{wandb_pip}{wandb_login}
+    "huggingface_hub==0.26.2" \
+    "transformers==4.46.3" \
+    "datasets==3.1.0" \
+    "kagglehub==0.2.9"{wandb_pip}{wandb_login}
 
-# Pre-fetch the base model. `hf download` is idempotent and prints
-# the cached path on stdout — capture it for the train step.
+# Pre-fetch the base model. `huggingface-cli download` (hf-hub 0.26 — the
+# shorter `hf` command needs hf-hub >= 0.34) is idempotent and prints the
+# cached path on stdout — capture it for the train step.
 echo "[lora-{name}] setup: pre-fetching {base_id}@{base_revision}"
-hf download --revision {base_revision} --quiet {base_id} > /tmp/lora-{name}.model_dir
+huggingface-cli download --revision {base_revision} --quiet {base_id} > /tmp/lora-{name}.model_dir
 echo "[lora-{name}] setup: model staged at $(cat /tmp/lora-{name}.model_dir)"
 """
 

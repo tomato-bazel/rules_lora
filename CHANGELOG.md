@@ -5,6 +5,28 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries. This repo is public
 (`github.com/fastverk/rules_lora`).
 
+## 0.1.2 — runpod backend: size-aware builder + pinned setup (real-GPU verified)
+
+Makes the `runpod` backend actually train, verified **end-to-end on a real
+RunPod CUDA pod** (RTX A4000): deploy → SSH → rsync → setup → `tune run` on
+`device: cuda` → adapter pulled back. Two fixes in the manifest synthesizer
+(`runpod_orchestrator write-runpod-manifest`):
+
+- **Size-aware torchtune builder.** The synthesizer hardcoded `lora_qwen2_1_5b`
+  for the whole qwen2 family — the same bug 0.1.1 fixed in the local runner, in
+  the runpod code path. Any non-1.5B qwen2 base (the Qwen2.5-0.5B smoke
+  included) failed at checkpoint load with a tensor size mismatch on the pod.
+  The builder now derives from the parsed `base_id` size
+  (`lora_builder`/`parse_param_size`, + a `rust_test`).
+- **Pinned setup dependency stack.** The setup block installed **unpinned**
+  `transformers`/`datasets`/`huggingface_hub` on top of the image's torch
+  2.4.1+cu124, pulling releases that need a newer torch (transformers 5.x) — the
+  run failed before training. Pinned to the torch-2.4 era
+  (`transformers==4.46.3`, `datasets==3.1.0`, `huggingface_hub==0.26.2`,
+  `kagglehub==0.2.9`) and switched `hf download` → `huggingface-cli download`
+  (the `hf` command needs hf-hub ≥ 0.34). torch itself is left untouched
+  (reinstalling it pulls a wheel built for a CUDA newer than the pod's driver).
+
 ## 0.1.1 — local runner: size-aware torchtune model builder
 
 Patch fix for the `local` backend. `local_train.py` hardcoded the
