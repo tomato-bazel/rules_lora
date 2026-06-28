@@ -4,3 +4,5 @@ bazel-*
 target/
 .claude/
 MODULE.bazel.lock
+.venvs/
+outputs/
