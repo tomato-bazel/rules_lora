@@ -83,7 +83,7 @@ def lora_train(
         data_volume = "",
         data_center = "",
         # Empty = no wandb. Set to the W&B project name (e.g.
-        # "agora", "rules_agentic_ide") to enable W&B tracking for the
+        # "my-lora-runs") to enable W&B tracking for the
         # runpod run. The pod will pip-install wandb, forward
         # WANDB_API_KEY from the local env, log in, and torchtune's
         # metric_logger becomes WandBLogger.
@@ -119,6 +119,16 @@ def lora_train(
         each in turn, advancing past capacity ("no instances available")
         errors. e.g. `["NVIDIA L40S", "NVIDIA A40", "NVIDIA A100 80GB PCIe"]`.
       runpod_image: override the default RunPod image.
+      runpod_cloud: RunPod cloud type, `"SECURE"` (default) or
+        `"COMMUNITY"`.
+      data_volume: optional RunPod network volume ID. When set, the dataset
+        is staged to the volume via S3 and read from the mount instead of
+        rsynced over SSH.
+      data_center: the network volume's data center (e.g. `"EU-RO-1"`);
+        the pod is placed there. Required with `data_volume`.
+      wandb_project: W&B project name. Empty (default) disables W&B; when
+        set, the pod installs wandb, forwards `WANDB_API_KEY` from the local
+        environment, and torchtune logs through `WandBLogger`.
       visibility: standard bazel visibility.
     """
     _lora_train_rule(
@@ -310,19 +320,17 @@ def lora_merge(
 def expert_manifest(
         name,
         adapters,
-        routing = "nearest_centroid",
-        cluster_manifest = None,
+        routing = "nearest_centroid",  # @unused (placeholder until the real rule lands)
+        cluster_manifest = None,  # @unused
         visibility = None):
     """Bundle N trained adapters into an `ExpertManifest.binpb`.
 
-    Wire shape mirrors `[[rules_agentic_ide]]`'s
-    `agentic_ide.v1.ExpertManifest`. v0.0.1: placeholder filegroup;
-    v0.0.2 emits the real binpb.
+    The manifest maps each routing cluster to its adapter, built from
+    the `TrainingArtifact`s in `//proto:lora.proto`.
+    v0.0.1: placeholder filegroup; v0.0.2 emits the real binpb.
     """
     native.filegroup(
         name = name,
         srcs = adapters,
         visibility = visibility,
     )
-    _ = routing
-    _ = cluster_manifest

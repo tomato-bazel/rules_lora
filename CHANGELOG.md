@@ -3,14 +3,32 @@
 All notable changes to rules_lora. The format is loosely
 [Keep a Changelog](https://keepachangelog.com/) — version headers
 mirror the published bazel-registry entries. This repo is public
-(`github.com/fastverk/rules_lora`).
+(`github.com/tomato-bazel/rules_lora`).
 
-## Unreleased
+## 0.1.5 — rules_runpod 0.1.0, public-repo cleanup
 
 - **rules_runpod 0.0.11 → 0.1.0** (now public at `tomato-bazel/rules_runpod`).
   0.1.0 renames the detached-run pod files to `.runpod_run.*`; a runpod job
   launched with an older rules_lora can't be polled after upgrading, so let
   in-flight runs finish first.
+- **`@rust_toolchains//:all` is now registered with `dev_dependency = True`.**
+  rules_rust registers the same toolchains for every module in the graph, so
+  the non-dev registration only re-imposed them on consumers. No change for
+  consumers: the Rust tools still resolve through rules_rust's registration.
+- The repo carries the tomato-bazel conventions: `.bazelrc` lists the
+  tomato-bazel registry ahead of the BCR (a fresh clone could not resolve
+  rules_runpod without it), and CI runs `bazel test //...` on Linux and macOS
+  plus a buildifier lint.
+- The design notes moved from `INTERNAL.md` into `README.md`, and comments
+  and docs no longer name private downstream projects.
+
+## 0.1.4 — registry hygiene
+
+- Dropped the `local_path_override` onto `../rules_runpod`. It shipped in every
+  published version from 0.0.10 on but was a no-op for consumers (overrides
+  apply only in the root module).
+- Declared rules_runpod 0.0.11 (the declared version was stale at 0.0.6).
+- Added the MIT `LICENSE` and a `README.md`.
 
 ## 0.1.3 — local runner: fully-pinned dep set (fresh-venv verified)
 
@@ -164,7 +182,7 @@ Synthesized runpod manifest now sets `detached = true` +
 `tune run`) executes detached on the pod and is polled for
 completion rather than streamed over a tethered SSH session.
 
-Three consecutive ~1hr agora parser fine-tunes died to mid-run
+Three consecutive ~1hr parser fine-tunes died to mid-run
 SSH `Connection reset by peer`. Training was converging each
 time; the SSH session was the failure point. rules_runpod 0.0.6
 adds the detached-execution primitives; this release opts the
@@ -173,15 +191,14 @@ training manifest into them. Bumps the rules_runpod dep 0.0.5 →
 
 ## 0.0.28 — Wandb integration (runpod backend)
 
-Opt-in W&B tracking on `lora_train(backend="runpod")`. Pattern
-mirrors prime-transformer's runpod-side wandb wiring:
+Opt-in W&B tracking on `lora_train(backend="runpod")`:
 
 ```python
 lora_train(
     name = "parser_full_jobspec",
     ...
     backend = "runpod",
-    wandb_project = "agora",   # NEW
+    wandb_project = "my-lora-runs",   # NEW
 )
 ```
 
@@ -273,7 +290,7 @@ torchtune 0.5.0's `get_memory_stats` calls
 `log_peak_memory_stats=False`. torchtune 0.4.0 (with torchao 0.5.0)
 doesn't hit this code path and runs cleanly on Apple Silicon MPS.
 
-Verified end-to-end: `tune run` starts on the agora parser smoke
+Verified end-to-end: `tune run` starts on a parser smoke run
 without import-time or device-detection errors.
 
 ## 0.0.22 — Pin local-backend deps to a known-good triangle
@@ -310,7 +327,7 @@ automatically.
 
 ## 0.0.20 — Local backend: install torch + unpin versions
 
-Two local-backend fixes uncovered by the agora smoke run:
+Two local-backend fixes uncovered by a smoke run:
 
 * Install `torch` explicitly in the venv (the previous pip install
   list assumed torch was already present, as in the RunPod
@@ -460,8 +477,8 @@ v0.0.4 pinned `runpod/pytorch:2.5.1-py3.11-cuda12.4.1-devel-ubuntu22.04`
 as the default RunPod image — but that tag was never published to
 Docker Hub, so RunPod's container daemon failed pod startup with
 `manifest unknown`. Bump default to `2.4.0-py3.11-cuda12.4.1-devel-
-ubuntu22.04` — same Python/CUDA/Ubuntu stack, but a real tag (used
-by prime-transformer's working manifests).
+ubuntu22.04` — same Python/CUDA/Ubuntu stack, but a real tag (one
+already known to start on RunPod).
 
 ## 0.0.6 — `lora_train(runpod_cloud = "SECURE")` knob
 
@@ -532,10 +549,9 @@ Smoke at `examples/smoke/`:
 
 New public macro `lora_corpus`: declare an SFT dataset *produced by
 running a user-supplied transform binary over a `source` filegroup,
-chained from upstream corpora via `deps`*. Three consumers
-(rules_agentic_ide chat traces, agora capability-auction corpus,
-the NDA'd third) share the input/transform/validate/output skeleton;
-the rule factors it out.
+chained from upstream corpora via `deps`*. Corpus pipelines
+(chat traces, task-specific parser corpora, …) share the
+input/transform/validate/output skeleton; the rule factors it out.
 
 Public surface added:
 
@@ -577,7 +593,7 @@ Public surface (`@rules_lora//lora:defs.bzl`):
   `lora.v1.TrainingJobSpec` (JSON, build-time) that a backend
   executes at `bazel run` time.
 * `expert_manifest` — bundles N adapters into the
-  `agentic_ide.v1.ExpertManifest.binpb` shape (placeholder
+  `ExpertManifest.binpb` shape (placeholder
   filegroup in v0.0.1; real rule in v0.0.2).
 
 Runtime stubs:

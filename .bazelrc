@@ -1,4 +1,12 @@
 # Allows `use_extension(..., isolate=True)` so our `crates` universe
-# can coexist with consumer crates universes (rules_agentic_ide,
-# prime-transformer, etc. all also register `crates`).
+# can coexist with a consumer's own `crates` universe.
 common --experimental_isolated_extension_usages
+
+# rules_runpod (and its rules_openapi dependency) are published to the
+# tomato-bazel registry, not the BCR. Without these lines a fresh clone cannot
+# resolve this module's own dependency graph.
+#
+# `--registry` ACCUMULATES rather than replaces, and FIRST MATCH WINS, so BCR
+# must be listed explicitly and must come second.
+common --registry=https://registry.tbzl.dev/
+common --registry=https://bcr.bazel.build/
