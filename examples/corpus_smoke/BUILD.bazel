@@ -1,5 +1,5 @@
-load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_lora//lora:defs.bzl", "lora_corpus")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 # Smoke example for `lora_corpus` (v0.0.3).
 #
