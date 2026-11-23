@@ -5,6 +5,13 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries. This repo is public
 (`github.com/fastverk/rules_lora`).
 
+## Unreleased
+
+- **rules_runpod 0.0.11 → 0.1.0** (now public at `tomato-bazel/rules_runpod`).
+  0.1.0 renames the detached-run pod files to `.runpod_run.*`; a runpod job
+  launched with an older rules_lora can't be polled after upgrading, so let
+  in-flight runs finish first.
+
 ## 0.1.3 — local runner: fully-pinned dep set (fresh-venv verified)
 
 Applies the same fragility fix as 0.1.2 (runpod), now to the `local` backend.
