@@ -18,20 +18,20 @@ py_binary(
 
 lora_corpus(
     name = "base_corpus",
-    min_examples = 3,
-    schema = "messages_v1",
     source = ["raw_prompts.txt"],
     transform = ":smoke_transform",
+    schema = "messages_v1",
+    min_examples = 3,
 )
 
 lora_corpus(
     name = "derived_corpus",
-    # 3 (source) + 3 (dep) = 6 rows expected.
-    min_examples = 6,
-    schema = "messages_v1",
     source = ["raw_prompts.txt"],
     transform = ":smoke_transform",
     deps = [":base_corpus"],
+    schema = "messages_v1",
+    # 3 (source) + 3 (dep) = 6 rows expected.
+    min_examples = 6,
 )
 
 # Demonstrate that a `lora_corpus` plugs in wherever `lora_dataset`
