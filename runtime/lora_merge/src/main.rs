@@ -8,8 +8,8 @@
 //! with no LoRA at serve/train time. Optionally pushes the merged dir
 //! to the HF hub via the `hf` CLI.
 //!
-//! The merge math is the same as an inference-time LoRA merge (cf.
-//! `agora_infer::Engine::export_merged`), but persisted. Runs on CPU —
+//! The merge math is the same as an inference-time LoRA merge, but
+//! persisted. Runs on CPU —
 //! the merge is I/O bound, so no GPU feature is needed.
 //!
 //! Adapter key layout (torchtune → peft):

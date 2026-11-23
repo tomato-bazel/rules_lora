@@ -11,9 +11,8 @@ user prompt, emit a `messages_v1` row with a fixed assistant reply.
 Optionally also pass-through every line from each `--corpus-dep` JSONL
 (deps are already in messages_v1 form, so we re-emit verbatim).
 
-This is *only* a smoke fixture; production transforms (e.g.,
-`@agora//crates/agora_corpus:agora-corpus parser-dataset`) emit their
-own structured supervision.
+This is *only* a smoke fixture; production transforms emit their own
+structured supervision.
 """
 
 import argparse

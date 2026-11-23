@@ -25,9 +25,11 @@ load(
 _EDGE_ATTRS = ["base", "recipe", "dataset", "adapter"]
 
 def _own_record(target):
-    """The provenance record for `target` itself, or None if it carries no
-    rules_lora provider (e.g. a plain `lora_train` orchestration node — its
-    value is the deps it threads)."""
+    """Returns the provenance record for `target` itself.
+
+    Returns None if `target` carries no rules_lora provider (e.g. a plain
+    `lora_train` orchestration node, whose value is the deps it threads).
+    """
     if LoraDatasetInfo in target:
         i = target[LoraDatasetInfo]
         return struct(

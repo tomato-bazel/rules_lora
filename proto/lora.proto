@@ -3,12 +3,9 @@
 // every backend writes and that the ExpertManifest emit step
 // consumes.
 //
-// Cross-repo compatibility note: TrainingArtifact below is a
-// superset of `agentic_ide.v1.Expert` (in
-// rules_agentic_ide/proto/agentic_ide/v1/experts.proto). The
-// expert_manifest macro in this repo projects N TrainingArtifacts
-// down to an `agentic_ide.v1.ExpertManifest.binpb` (or a
-// future agora.v1 equivalent). One contract, two consumers.
+// The expert_manifest macro in this repo projects N
+// TrainingArtifacts down to an `ExpertManifest.binpb`, which a
+// downstream router reads to map a query cluster to its adapter.
 syntax = "proto3";
 
 package lora.v1;

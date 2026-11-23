@@ -8,7 +8,6 @@ touching every consumer.
 
 load(
     ":providers.bzl",
-    "LoraAdapterInfo",
     "LoraBaseModelInfo",
     "LoraDatasetInfo",
     "LoraRecipeInfo",
@@ -370,9 +369,8 @@ lora_merge = rule(
 # the orchestrator's `write-runpod-manifest` subcommand.
 #
 # `family` selects the torchtune model component (qwen2 / llama3 /
-# mistral). The default `qwen2` matches the LoRA-trained NL→capability
-# parser in agora — extend the match arm in the orchestrator when a
-# new family lands.
+# mistral). The default is `qwen2`; extend the match arm in the
+# orchestrator when a new family lands.
 def _lora_runpod_manifest_synth_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".toml")
     recipe = ctx.attr.recipe[LoraRecipeInfo]

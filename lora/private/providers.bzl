@@ -61,7 +61,7 @@ LoraAdapterInfo = provider(
 ExpertManifestInfo = provider(
     doc = "The routing contract: cluster_id -> adapter mapping.",
     fields = {
-        "binpb": "File — agentic_ide.v1.ExpertManifest serialized.",
+        "binpb": "File — the serialized ExpertManifest.",
         "n_experts": "int.",
     },
 )

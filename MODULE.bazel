@@ -1,14 +1,12 @@
 # rules_lora — Bazel-native LoRA fine-tuning.
 #
-# Four public macros, one premium-tier private repo. See INTERNAL.md
-# for the design intent. Consumers are sibling fastverk repos
-# (rules_agentic_ide, agora, …) via `local_path_override` for now;
-# if the premium tier moves to a private bazel-registry, the cluster
-# moves together.
+# Declares typed datasets, training recipes and training runs as Bazel
+# targets, plus an expert manifest that bundles trained adapters. See
+# README.md for the design.
 
 module(
     name = "rules_lora",
-    version = "0.1.4",
+    version = "0.1.5",
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
@@ -33,6 +31,7 @@ bazel_dep(name = "rules_rust", version = "0.70.0")
 # in play. Use --override_module in a gitignored .bazelrc.user for sibling
 # development, so it cannot be published again.
 bazel_dep(name = "rules_runpod", version = "0.1.0")
+
 # rules_proto — the LoRA contract (TrainingJobSpec, AdapterArtifact,
 # ExpertManifest envelope) is proto-defined so consumers in Rust,
 # Python, and Lean can speak the same schema.
@@ -63,7 +62,13 @@ rust.toolchain(
 )
 use_repo(rust, "rust_toolchains")
 
-register_toolchains("@rust_toolchains//:all")
+# Dev-only: rules_rust already registers `@rust_toolchains//:all` for every
+# module in the graph, so a non-dev registration here only re-imposed the same
+# toolchains on each consumer (and counts against the registry's D2 gate).
+register_toolchains(
+    "@rust_toolchains//:all",
+    dev_dependency = True,
+)
 
 # Cargo crates resolved declaratively via `from_specs`. Kept minimal
 # at v0 — the runner ecosystem can expand without re-locking.
