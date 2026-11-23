@@ -5,6 +5,16 @@ All notable changes to rules_lora. The format is loosely
 mirror the published bazel-registry entries. This repo is public
 (`github.com/tomato-bazel/rules_lora`).
 
+## 0.1.6 — `lora_train` / `lora_merge` work with only `bazel_dep(rules_lora)`
+
+- The macros put plain-string labels on the targets they generate in the
+  caller's package (`"@rules_python//python/runfiles"`,
+  `"@rules_lora//runtime/..."`, the backend `select()` keys). Those resolve
+  against the *consumer's* repo mapping, so a module that declared only
+  `rules_lora` failed on `@rules_python`. They are now `Label(...)`s.
+- rules_runpod 0.1.0 → 0.1.1, which fixes the same problem in `runpod_job`
+  (the `runpod` backend's run entry).
+
 ## 0.1.5 — rules_runpod 0.1.0, public-repo cleanup
 
 - **rules_runpod 0.0.11 → 0.1.0** (now public at `tomato-bazel/rules_runpod`).

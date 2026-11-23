@@ -46,6 +46,13 @@ load(
     _lora_train_rule = "lora_train",
 )
 
+# Labels the macros below hand to targets in the CALLER's package. Wrapped in
+# Label() so they resolve against this module's repo mapping, not the
+# consumer's: a consumer that depends only on rules_lora has no
+# `@rules_python` of its own, and may name rules_lora something else.
+_LORA_MERGE = Label("//runtime/lora_merge:lora-merge")
+_PY_RUNFILES = Label("@rules_python//python/runfiles")
+
 # Re-exports — public surface for the simple rules.
 lora_base_model = _lora_base_model
 lora_corpus = _lora_corpus
@@ -152,14 +159,14 @@ def lora_train(
     )
     py_binary(
         name = name + "_local",
-        srcs = ["@rules_lora//runtime/local_runner:local_train.py"],
+        srcs = [Label("//runtime/local_runner:local_train.py")],
         main = "local_train.py",
         args = ["--config", "$(rlocationpath :" + name + "_local_config)"],
         data = [
             ":" + name + "_local_config",
             dataset,
         ],
-        deps = ["@rules_python//python/runfiles"],
+        deps = [_PY_RUNFILES],
         visibility = visibility,
     )
 
@@ -246,9 +253,9 @@ def lora_train(
     native.alias(
         name = name + ".run",
         actual = select({
-            "@rules_lora//lora/backend:local": ":" + name + "_local",
-            "@rules_lora//lora/backend:runpod": ":" + name + "_runpod_job.run",
-            "@rules_lora//lora/backend:modal": ":" + name + "_modal",
+            Label("//lora/backend:local"): ":" + name + "_local",
+            Label("//lora/backend:runpod"): ":" + name + "_runpod_job.run",
+            Label("//lora/backend:modal"): ":" + name + "_modal",
             "//conditions:default": ":" + name + "_runpod_job.run",
         }),
         visibility = visibility,
@@ -301,19 +308,19 @@ def lora_merge(
     # binary — no generated shell.
     py_binary(
         name = name + ".run",
-        srcs = ["@rules_lora//runtime/lora_merge:merge_run.py"],
+        srcs = [Label("//runtime/lora_merge:merge_run.py")],
         main = "merge_run.py",
         args = [
             "--config",
             "$(rlocationpath :" + name + ")",
             "--merge-tool",
-            "$(rlocationpath @rules_lora//runtime/lora_merge:lora-merge)",
+            "$(rlocationpath %s)" % _LORA_MERGE,
         ],
         data = [
             ":" + name,
-            "@rules_lora//runtime/lora_merge:lora-merge",
+            _LORA_MERGE,
         ],
-        deps = ["@rules_python//python/runfiles"],
+        deps = [_PY_RUNFILES],
         visibility = visibility,
     )
 

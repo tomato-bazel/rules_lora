@@ -6,7 +6,7 @@
 
 module(
     name = "rules_lora",
-    version = "0.1.5",
+    version = "0.1.6",
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
@@ -30,7 +30,7 @@ bazel_dep(name = "rules_rust", version = "0.70.0")
 # resolves from the registry now; verified by building //... with no override
 # in play. Use --override_module in a gitignored .bazelrc.user for sibling
 # development, so it cannot be published again.
-bazel_dep(name = "rules_runpod", version = "0.1.0")
+bazel_dep(name = "rules_runpod", version = "0.1.1")
 
 # rules_proto — the LoRA contract (TrainingJobSpec, AdapterArtifact,
 # ExpertManifest envelope) is proto-defined so consumers in Rust,
